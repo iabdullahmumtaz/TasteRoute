@@ -1,0 +1,36 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - tasteroute_mongo:/data/db
+    ports:
+      - "27018:27017"
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "6020:6020"
+    environment:
+      PORT: 6020
+      MONGODB_URI: mongodb://mongo:27017/tasteroute
+      JWT_SECRET: ${JWT_SECRET:-tasteroute-dev-secret}
+      CLIENT_URL: http://localhost:5020
+    depends_on:
+      - mongo
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:6020
+        VITE_SOCKET_URL: http://localhost:6020
+    restart: unless-stopped
+    ports:
+      - "5020:80"
+    depends_on:
+      - backend
+
+volumes:
+  tasteroute_mongo:
